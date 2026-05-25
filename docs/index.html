@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Discover your favourite colour through a series of pairwise comparisons.">
+  <title>好きな色 — Favourite Colour</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     WELCOME SCREEN
+     ════════════════════════════════════════════════ -->
+<section id="screen-welcome" class="screen" aria-label="Welcome">
+
+  <div class="welcome-wrap">
+
+    <!-- App identity -->
+    <div style="text-align:center">
+      <h1 class="app-title">好きな色</h1>
+      <p class="app-subtitle">Favourite Colour</p>
+    </div>
+
+    <!-- ── Setup form: palette + method ── -->
+    <form id="form-setup" class="setup-form" novalidate>
+
+      <!-- Palette selection -->
+      <fieldset class="form-group">
+        <legend>How many colours?</legend>
+        <div class="radio-grid">
+
+          <label class="radio-opt">
+            <input type="radio" name="palette" value="8">
+            <span class="opt-label">
+              <span class="opt-name">8</span>
+              <span class="opt-desc">Quick — ~24 choices</span>
+            </span>
+          </label>
+
+          <label class="radio-opt">
+            <input type="radio" name="palette" value="16" checked>
+            <span class="opt-label">
+              <span class="opt-name">16</span>
+              <span class="opt-desc">Standard — ~64 choices</span>
+            </span>
+          </label>
+
+          <label class="radio-opt">
+            <input type="radio" name="palette" value="all">
+            <span class="opt-label">
+              <span class="opt-name">65 named</span>
+              <span class="opt-desc">Rich — ~405 choices</span>
+            </span>
+          </label>
+
+          <label class="radio-opt">
+            <input type="radio" name="palette" value="websafe">
+            <span class="opt-label">
+              <span class="opt-name">Web-safe 216</span>
+              <span class="opt-desc">Epic — ~1700 choices</span>
+            </span>
+          </label>
+
+        </div>
+      </fieldset>
+
+      <!-- Method selection -->
+      <fieldset class="form-group">
+        <legend>Ranking method</legend>
+        <div class="radio-grid">
+
+          <label class="radio-opt">
+            <input type="radio" name="method" value="tennis" checked>
+            <span class="opt-label">
+              <span class="opt-name">Tennis Ladder</span>
+              <span class="opt-desc">Merge-sort style; definitive ranking</span>
+            </span>
+          </label>
+
+          <label class="radio-opt">
+            <input type="radio" name="method" value="elo">
+            <span class="opt-label">
+              <span class="opt-name">Chess Ranking</span>
+              <span class="opt-desc">Elo ratings; fewer comparisons</span>
+            </span>
+          </label>
+
+        </div>
+      </fieldset>
+
+      <!-- Submit -->
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Begin</button>
+        <span id="est-comparisons" aria-live="polite"></span>
+      </div>
+
+    </form>
+
+    <!-- ── Resume prompt (shown when a saved session exists) ── -->
+    <div id="resume-prompt" class="resume-prompt hidden" role="alert">
+      <p>You have an unfinished session — would you like to continue?</p>
+      <div class="resume-actions">
+        <button id="btn-resume" class="btn-secondary">Resume</button>
+        <button id="btn-new-session" class="btn-ghost">Start fresh</button>
+      </div>
+    </div>
+
+  </div><!-- /welcome-wrap -->
+
+  <footer class="app-footer">
+    <a href="algorithms.html">How the algorithms work →</a>
+  </footer>
+
+</section><!-- /screen-welcome -->
+
+
+<!-- ════════════════════════════════════════════════
+     COMPARING SCREEN
+     ════════════════════════════════════════════════ -->
+<section id="screen-comparing" class="screen" aria-label="Comparison">
+
+  <!-- Header bar -->
+  <header class="compare-header">
+    <button id="btn-back" class="btn-ghost btn-ghost--light" aria-label="Back to welcome">← Back</button>
+
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+      <span id="progress-text" class="progress-label">0 / ~0</span>
+      <div class="progress-track">
+        <div id="progress-bar" class="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.25rem;align-items:center">
+      <button id="btn-early-results" class="btn-ghost btn-ghost--light hidden" title="See partial results now">
+        Results ↗
+      </button>
+      <button id="btn-debug" class="btn-ghost btn-ghost--light" aria-label="Toggle debug panel" title="Debug">⚙</button>
+    </div>
+  </header>
+
+  <!-- Prompt -->
+  <p class="compare-prompt" aria-live="polite">Which do you prefer?</p>
+
+  <!-- Two large colour swatches -->
+  <div class="swatches" role="group" aria-label="Colour pair">
+    <button class="swatch" id="swatch-a" aria-label="Choose colour A">
+      <span class="swatch-label" id="label-a" aria-hidden="true"></span>
+    </button>
+    <button class="swatch" id="swatch-b" aria-label="Choose colour B">
+      <span class="swatch-label" id="label-b" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- Keyboard shortcut hint -->
+  <p class="kbd-hint">Press <kbd>A</kbd> / <kbd>←</kbd> or <kbd>B</kbd> / <kbd>→</kbd></p>
+
+  <!-- Debug panel (hidden by default) -->
+  <div id="debug-panel" class="debug-panel hidden" aria-hidden="true">
+    <pre id="debug-output"></pre>
+  </div>
+
+</section><!-- /screen-comparing -->
+
+
+<!-- ════════════════════════════════════════════════
+     RESULTS SCREEN
+     ════════════════════════════════════════════════ -->
+<section id="screen-results" class="screen" aria-label="Results">
+
+  <div class="results-wrap">
+
+    <h2 class="results-title">Your Favourite Colour</h2>
+
+    <!-- Winner hero -->
+    <div class="winner-card">
+      <div id="winner-colour" class="winner-circle" role="img" aria-label="Favourite colour swatch"></div>
+      <div class="winner-label">
+        <div id="winner-name" class="winner-name"></div>
+        <div id="winner-hex"  class="winner-hex"></div>
+      </div>
+    </div>
+
+    <!-- Full ranked list (collapsed by default) -->
+    <details class="ranking-details">
+      <summary>Full ranking</summary>
+      <ol id="ranking-list" class="ranking-list" aria-label="All colours ranked"></ol>
+    </details>
+
+    <!-- Actions -->
+    <div class="results-actions">
+      <button id="btn-share"   class="btn-secondary">Share result</button>
+      <button id="btn-restart" class="btn-ghost">Start over</button>
+    </div>
+
+  </div><!-- /results-wrap -->
+
+  <footer class="app-footer">
+    <a href="algorithms.html">How the algorithms work →</a>
+  </footer>
+
+</section><!-- /screen-results -->
+
+
+<!-- ════════════════════════════════════════════════
+     SCRIPTS  (loaded in dependency order)
+     ════════════════════════════════════════════════ -->
+<script src="js/colours.js"></script>
+<script src="js/algorithms.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+
+<!--
+  ══════════════════════════════════════════════════════
+  GoatCounter analytics  —  CONFIGURE BEFORE DEPLOYING
+  ══════════════════════════════════════════════════════
+  1. Sign up free at https://www.goatcounter.com/
+  2. Replace YOUR_ACCOUNT below with your GoatCounter site code.
+  3. The results page automatically updates the URL to ?fav=RRGGBB,
+     so you can filter GoatCounter events by that parameter to see
+     which hex colours are most commonly chosen as favourites.
+
+  If you do not want analytics, delete the <script> tag below.
+-->
+<script
+  data-goatcounter="https://YOUR_ACCOUNT.goatcounter.com/count"
+  async src="//gc.zgo.at/count.js"></script>
+
+</body>
+</html>
