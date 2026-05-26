@@ -105,7 +105,7 @@ fieldset    { border: none; }
   color: var(--color-text-muted);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  margin-top: calc(-1 * var(--sp-6));
+  margin-top: var(--sp-1);
 }
 
 /* ── Setup form ── */
