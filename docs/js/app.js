@@ -122,10 +122,11 @@ formSetup.addEventListener('change', updateEstimate);
 
 formSetup.addEventListener('submit', e => {
   e.preventDefault();
-  const data    = new FormData(formSetup);
-  const palette = data.get('palette');
-  const method  = data.get('method');
-  startNewSession(palette, method);
+  const data      = new FormData(formSetup);
+  const palette   = data.get('palette');
+  const method    = data.get('method');
+  const showNames = data.has('showNames');
+  startNewSession(palette, method, showNames);
 });
 
 btnResume.addEventListener('click', () => {
@@ -144,9 +145,9 @@ btnNewSession.addEventListener('click', () => {
    Session management
    ══════════════════════════════════════════════ */
 
-function startNewSession(palette, method) {
+function startNewSession(palette, method, showNames) {
   const colours = getColourSet(palette);
-  session = { palette, method, startedAt: Date.now(), complete: false };
+  session = { palette, method, showNames: !!showNames, startedAt: Date.now(), complete: false };
 
   ranker = method === 'tennis'
     ? new TennisLadder(colours)
@@ -200,8 +201,8 @@ function renderPair() {
   swatchB.style.backgroundColor = b.hex;
 
   /* Label text */
-  labelA.textContent = a.name || a.hex;
-  labelB.textContent = b.name || b.hex;
+  labelA.textContent = session.showNames ? (a.name || a.hex) : '';
+  labelB.textContent = session.showNames ? (b.name || b.hex) : '';
 
   /* Accessible label (for screen readers) */
   swatchA.setAttribute('aria-label', `Choose ${a.name || a.hex}`);
