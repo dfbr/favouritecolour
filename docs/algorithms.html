@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="How the Tennis Ladder and Chess Elo ranking algorithms work in the Favourite Colour app.">
+  <title>Algorithms — Favourite Colour</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<main class="algo-page">
+
+  <a href="index.html" class="algo-back">← Back to app</a>
+
+  <header>
+    <h1>How the Algorithms Work</h1>
+    <p>The Favourite Colour app offers two ranking methods. Both present pairs of colours for you to compare; they differ in <em>which</em> pairs are shown and how the final ranking is built.</p>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       TENNIS LADDER
+       ══════════════════════════════════════════ -->
+  <section class="algo-section" id="tennis">
+    <h2>Tennis Ladder — Merge Sort</h2>
+
+    <p>
+      The Tennis Ladder method works like a <strong>merge sort</strong> tournament. Colours are randomly split into pairs; the winner of each pair advances. Winners are then merged with other winners, and so on, until a complete ranking emerges.
+    </p>
+
+    <p>
+      The metaphor: imagine colours as players on a tennis ladder. Initially every player is their own top seed. Through a series of head-to-head matches, players "climb" or "fall" the ladder until the final order is settled.
+    </p>
+
+    <h3>Key properties</h3>
+    <ul>
+      <li><strong>Comparison count:</strong> O(n log n) — approximately n × log₂(n) comparisons in total.</li>
+      <li><strong>Correctness:</strong> The result is a complete, consistent ranking. Every colour's position is decided by direct or transitive comparisons.</li>
+      <li><strong>No re-comparisons:</strong> Once you've decided between two colours, the algorithm never asks you to compare the same pair again.</li>
+    </ul>
+
+    <h3>Step-by-step example (4 colours)</h3>
+    <p>Suppose the colours are 🔴 Red, 🟢 Green, 🔵 Blue, 🟡 Yellow, shuffled randomly into [Green, Red, Yellow, Blue].</p>
+    <ol>
+      <li><strong>Pass 1 — merge pairs of 1:</strong> Compare Green vs Red → you prefer Red. Compare Yellow vs Blue → you prefer Yellow. Sorted runs: [Red, Green] and [Yellow, Blue].</li>
+      <li><strong>Pass 2 — merge pairs of 2:</strong> Merge [Red, Green] with [Yellow, Blue]. Compare Red vs Yellow → prefer Red. Compare Green vs Yellow → prefer Yellow. Flush Blue. Final: [Red, Yellow, Green, Blue].</li>
+    </ol>
+    <p>Total: 4 comparisons for 4 colours (optimal).</p>
+
+    <h3>Flow diagram</h3>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart TD
+    A([Start]) --> B[Shuffle colours randomly]
+    B --> C[Each colour is a sorted run of size 1]
+    C --> D{Queue has ≥ 2 runs?}
+    D -- Yes --> E[Take the first two runs A and B]
+    E --> F{Both A and B have\nelements remaining?}
+    F -- Yes --> G[Compare front of A\nvs front of B]
+    G --> H{User picks\nwhich colour?}
+    H -- Prefers A --> I[Move A's front\nto merged result]
+    H -- Prefers B --> J[Move B's front\nto merged result]
+    I --> F
+    J --> F
+    F -- No --> K[Flush remaining elements\nfrom the non-empty side]
+    K --> L[Push merged run\nto back of queue]
+    L --> D
+    D -- No → 1 run left --> M([Done — final ranking complete!])
+
+    style A fill:#c0392b,color:#fff
+    style M fill:#27ae60,color:#fff
+      </div>
+    </div>
+
+    <h3>Why merge sort?</h3>
+    <p>
+      Comparison-based sorting requires at least O(n log n) comparisons in the worst case — merge sort achieves this optimally. For 8 colours that is ~24 questions; for 16 colours ~64; for 64 colours ~384. This is the minimum number of questions needed to produce a complete, correct ranking.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       CHESS RANKING (ELO)
+       ══════════════════════════════════════════ -->
+  <section class="algo-section" id="elo">
+    <h2>Chess Ranking — Elo Rating System</h2>
+
+    <p>
+      The Chess Ranking method adapts the <strong>Elo rating system</strong>, originally designed for chess players, to colour preferences. Every colour starts with a rating of 1500. After each comparison, the winner gains rating points and the loser loses them. The amount gained or lost depends on how surprising the outcome was.
+    </p>
+
+    <h3>The Elo formula</h3>
+    <div class="formula-box">
+      Expected score for A:  E_A = 1 / (1 + 10^((R_B − R_A) / 400))<br>
+      New rating for A:      R_A′ = R_A + K × (S_A − E_A)<br>
+      <br>
+      Where:<br>
+        R_A, R_B = current ratings of colours A and B<br>
+        S_A      = 1 if A wins, 0 if B wins<br>
+        K        = 32  (how quickly ratings adjust)
+    </div>
+
+    <p>
+      If two colours have similar ratings and the comparison result is a surprise, ratings shift a lot. If one colour is already rated much higher and wins as expected, ratings change only a little.
+    </p>
+
+    <h3>Pair selection strategy</h3>
+    <p>
+      To maximise the information gained per comparison, the algorithm selects pairs as follows:
+    </p>
+    <ol>
+      <li>Find the colour that has been compared the fewest times (the "anchor").</li>
+      <li>Among all other colours, find the one whose rating is closest to the anchor's.</li>
+      <li>This pair is the most informative: evenly-matched colours produce the most rating movement.</li>
+    </ol>
+
+    <h3>Stopping criterion</h3>
+    <p>
+      The session ends once every colour has been compared at least <em>k</em> times, where k = max(3, ⌈log₂(n)⌉). For 16 colours this is 4 comparisons each, for a total of ~64 comparisons — the same order as Tennis Ladder.
+    </p>
+
+    <h3>Flow diagram</h3>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart TD
+    A([Start]) --> B[Assign rating 1500 to\nevery colour]
+    B --> C[Select pair: anchor = fewest\ncomparisons, opponent = closest\nElo rating to anchor]
+    C --> D[Show pair to user]
+    D --> E{User picks\nwhich colour?}
+    E -- Colour A --> F[S_A=1, S_B=0]
+    E -- Colour B --> G[S_A=0, S_B=1]
+    F --> H[Update:\nR_A′ = R_A + K·1−E_A\nR_B′ = R_B + K·0−E_B]
+    G --> I[Update:\nR_A′ = R_A + K·0−E_A\nR_B′ = R_B + K·1−E_B]
+    H --> J{Every colour compared\nat least k times?}
+    I --> J
+    J -- No --> C
+    J -- Yes --> K([Done — rank by final Elo rating])
+
+    style A fill:#c0392b,color:#fff
+    style K fill:#27ae60,color:#fff
+      </div>
+    </div>
+
+    <h3>Advantages of Elo</h3>
+    <ul>
+      <li><strong>Fewer questions for large palettes:</strong> The stopping criterion scales as n × log₂(n), matching Tennis Ladder, but early high-certainty colours can be skipped.</li>
+      <li><strong>Probabilistic confidence:</strong> The rating spread indicates how decisive your preferences are.</li>
+      <li><strong>Graceful degradation:</strong> Even if you stop early, you still get a meaningful partial ranking.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       COMPARISON TABLE
+       ══════════════════════════════════════════ -->
+  <section class="algo-section" id="comparison">
+    <h2>Side-by-side Comparison</h2>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+quadrantChart
+    title Characteristics of each algorithm
+    x-axis Fewer comparisons --> More comparisons
+    y-axis Partial ranking quality --> Complete ranking quality
+    quadrant-1 "Best of both"
+    quadrant-2 "Quick &amp; complete"
+    quadrant-3 "Quick but approximate"
+    quadrant-4 "Thorough but long"
+    Tennis Ladder (8): [0.15, 0.95]
+    Tennis Ladder (16): [0.35, 0.95]
+    Chess Elo (8): [0.12, 0.78]
+    Chess Elo (16): [0.30, 0.82]
+    Chess Elo (64): [0.55, 0.80]
+    Tennis Ladder (64): [0.75, 0.96]
+      </div>
+    </div>
+
+    <table style="width:100%;max-width:620px;border-collapse:collapse;font-size:var(--text-sm);margin-top:var(--sp-4)">
+      <thead>
+        <tr style="border-bottom:2px solid var(--color-border)">
+          <th style="text-align:left;padding:var(--sp-2) var(--sp-3)">Property</th>
+          <th style="text-align:center;padding:var(--sp-2) var(--sp-3)">Tennis Ladder</th>
+          <th style="text-align:center;padding:var(--sp-2) var(--sp-3)">Chess Ranking</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--color-border)">
+          <td style="padding:var(--sp-2) var(--sp-3)">Algorithm</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Merge Sort</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Elo Rating</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--color-border)">
+          <td style="padding:var(--sp-2) var(--sp-3)">Comparisons (n=16)</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">~64</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">~64</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--color-border)">
+          <td style="padding:var(--sp-2) var(--sp-3)">Result type</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Complete sort</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Rating-based rank</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--color-border)">
+          <td style="padding:var(--sp-2) var(--sp-3)">Early stopping</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Partial (via button)</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Natural (per-colour quota)</td>
+        </tr>
+        <tr>
+          <td style="padding:var(--sp-2) var(--sp-3)">Best for</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Definitive ranking</td>
+          <td style="text-align:center;padding:var(--sp-2) var(--sp-3)">Large palettes</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       PERSISTENCE
+       ══════════════════════════════════════════ -->
+  <section class="algo-section" id="persistence">
+    <h2>Session Persistence</h2>
+    <p>
+      All progress is saved to <code>localStorage</code> under the key <code>favourite-colour-v1</code>. The saved data includes:
+    </p>
+    <ul>
+      <li>The full algorithm state (which merges have been done, current Elo ratings, etc.)</li>
+      <li>The shuffled colour list for the session</li>
+      <li>Timestamps for when the session started and was last saved</li>
+    </ul>
+    <p>
+      On reload, the app detects the saved state and offers to resume. You can also clear the session and start fresh at any time.
+    </p>
+    <p>
+      No data is sent to any server. Everything stays in your browser.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       ANALYTICS
+       ══════════════════════════════════════════ -->
+  <section class="algo-section" id="analytics">
+    <h2>Usage Analytics</h2>
+    <p>
+      The results page updates the browser URL to include the winning colour, for example:
+    </p>
+    <div class="formula-box">
+      https://example.github.io/favouritecolour/?fav=FF0000
+    </div>
+    <p>
+      This means that if <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a> (or any other analytics tool that records URLs) is configured, you can query the path parameter <code>fav</code> to find which colours are most commonly chosen as favourites across all users.
+    </p>
+    <p>
+      To enable GoatCounter, replace <code>YOUR_ACCOUNT</code> in the <code>&lt;script&gt;</code> tag near the bottom of <code>index.html</code> with your GoatCounter site code.
+    </p>
+  </section>
+
+  <footer class="app-footer">
+    <a href="index.html">← Back to the app</a>
+  </footer>
+
+</main>
+
+<!-- Mermaid.js for diagrams (loaded from CDN) -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    fontFamily: 'Helvetica Neue, Arial, sans-serif',
+    fontSize: 14,
+  });
+</script>
+
+</body>
+</html>
