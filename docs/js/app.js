@@ -32,6 +32,12 @@ const CONTRAST_THRESHOLD = 0.179;
 
 /* Show "early results" button after this fraction of estimated comparisons */
 const EARLY_RESULTS_FRACTION = 0.4;
+/* Lightweight obfuscation key for analytics result token */
+const RESULTS_TOKEN_KEY = 'favourite-colour-results-v1';
+/* Encoded token layout: version|algorithm|winner|top10|checksum */
+const RESULT_TOKEN_PARTS = 5;
+/* Checksum modulus equals 36^3 (fits in 3 base36 chars) */
+const CHECKSUM_MODULO = 46656;
 
 /* ══════════════════════════════════════════════
    DOM references
@@ -315,16 +321,15 @@ function showResultsScreen() {
     rankingList.appendChild(li);
   });
 
-  /* Update URL so GoatCounter can record which colour won.
-     The URL becomes e.g. ?fav=FF0000 — no page reload. */
-  const favHex = winner.hex.replace('#', '');
+  /* Encode result details into a compact token for URL + analytics path */
+  const resultToken = _encodeResultToken(ranking, session ? session.method : 'tennis');
   try {
-    history.replaceState(null, '', `?fav=${favHex}`);
+    history.replaceState(null, '', `?r=${resultToken}`);
   } catch (_) { /* may fail on file:// */ }
 
   /* Fire GoatCounter event if the tracker is loaded */
   if (window.goatcounter && typeof window.goatcounter.count === 'function') {
-    window.goatcounter.count({ path: `results/${favHex}` });
+    window.goatcounter.count({ path: `results/${resultToken}` });
   }
 
   /* Mark session complete and persist */
@@ -400,6 +405,82 @@ function _toast(msg) {
     setTimeout(() => el.remove(), 400);
   }, 2200);
 }
+
+/** Encode algorithm + winner + top10 colours into an obfuscated URL-safe token. */
+function _encodeResultToken(ranking, method) {
+  const top10 = ranking
+    .slice(0, 10)
+    .map(({ colour }) => colour.hex.replace('#', '').toUpperCase());
+
+  const winner = top10[0] || '';
+  const algo = method === 'elo' ? 'e' : 't';
+  const payload = `v1|${algo}|${winner}|${top10.join('.')}`;
+  const checksum = _simpleChecksum(payload).toString(36).padStart(3, '0');
+  const packed = `${payload}|${checksum}`;
+  const obfuscated = _xorString(packed, RESULTS_TOKEN_KEY);
+
+  return _base64UrlEncode(obfuscated);
+}
+
+/**
+ * Decode a result token back into structured data.
+ * Useful for interpreting GoatCounter paths like results/<token>.
+ * Returns null when token is invalid/tampered.
+ */
+function _decodeResultToken(token) {
+  try {
+    const packed = _xorString(_base64UrlDecode(token), RESULTS_TOKEN_KEY);
+    const parts = packed.split('|');
+    if (parts.length !== RESULT_TOKEN_PARTS || parts[0] !== 'v1') return null;
+
+    const payload = parts.slice(0, 4).join('|');
+    const checksum = parseInt(parts[4], 36);
+    if (Number.isNaN(checksum) || checksum !== _simpleChecksum(payload)) return null;
+
+    const algo = parts[1] === 'e' ? 'elo' : 'tennis';
+    const winner = parts[2];
+    const top10 = parts[3] ? parts[3].split('.').filter(Boolean) : [];
+    return {
+      algorithm: algo,
+      favourite: winner ? `#${winner}` : null,
+      top10: top10.map(hex => `#${hex}`),
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function _simpleChecksum(input) {
+  let sum = 0;
+  for (let i = 0; i < input.length; i++) {
+    sum = ((sum * 31) + input.charCodeAt(i)) % CHECKSUM_MODULO;
+  }
+  return sum;
+}
+
+function _xorString(input, key) {
+  let out = '';
+  for (let i = 0; i < input.length; i++) {
+    out += String.fromCharCode(input.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return out;
+}
+
+function _base64UrlEncode(input) {
+  return btoa(input)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function _base64UrlDecode(input) {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  return atob(padded);
+}
+
+/* Optional helper for owner-side decoding from browser console. */
+window.decodeResultToken = _decodeResultToken;
 
 /* ══════════════════════════════════════════════
    Bootstrap

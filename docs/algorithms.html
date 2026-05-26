@@ -239,13 +239,13 @@ quadrantChart
   <section class="algo-section" id="analytics">
     <h2>Usage Analytics</h2>
     <p>
-      The results page updates the browser URL to include the winning colour, for example:
+      The results page updates the browser URL to include an encoded results token, for example:
     </p>
     <div class="formula-box">
-      https://example.github.io/favouritecolour/?fav=FF0000
+      https://example.github.io/favouritecolour/?r=AS8fGC8xBg0fIA0JCyM_Bj8nVQ...
     </div>
     <p>
-      This means that if <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a> (or any other analytics tool that records URLs) is configured, you can query the path parameter <code>fav</code> to find which colours are most commonly chosen as favourites across all users.
+      The token stores algorithm, favourite colour, and top-10 colours in a lightweight obfuscated format. If <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a> (or any analytics tool that records paths) is configured, events are sent to <code>results/&lt;token&gt;</code> so you can later decode aggregate outcome patterns.
     </p>
     <p>
       To enable GoatCounter, replace <code>YOUR_ACCOUNT</code> in the <code>&lt;script&gt;</code> tag near the bottom of <code>index.html</code> with your GoatCounter site code.

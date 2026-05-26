@@ -217,9 +217,10 @@
   ══════════════════════════════════════════════════════
   1. Sign up free at https://www.goatcounter.com/
   2. Replace YOUR_ACCOUNT below with your GoatCounter site code.
-  3. The results page automatically updates the URL to ?fav=RRGGBB,
-     so you can filter GoatCounter events by that parameter to see
-     which hex colours are most commonly chosen as favourites.
+  3. The results page automatically updates the URL to ?r=<encoded token>.
+     The token includes algorithm + favourite colour + top 10 colours in
+     a lightweight obfuscated format, and GoatCounter events are sent to
+     results/<token> so you can inspect and decode result patterns later.
 
   If you do not want analytics, delete the <script> tag below.
 -->
