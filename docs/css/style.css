@@ -298,11 +298,6 @@ fieldset    { border: none; }
   cursor: pointer;
 }
 
-/* Hover: subtle brightness lift */
-@media (hover: hover) {
-  .swatch:hover { filter: brightness(1.08); }
-}
-
 /* Tap / keyboard focus */
 .swatch:focus-visible {
   outline: 3px solid rgba(255,255,255,0.8);
