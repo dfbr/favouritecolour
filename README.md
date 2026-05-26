@@ -11,7 +11,7 @@ A minimal, Japanese-inspired web app that helps you discover your favourite colo
 - **Session persistence** — progress is saved to `localStorage`; you can leave and resume at any time.
 - **Responsive layout** — swatches fill the screen; stacks vertically on portrait/mobile, side-by-side on landscape/desktop.
 - **Accessible** — keyboard shortcuts (A/← and B/→), ARIA labels, high-contrast swatch labels.
-- **Analytics-ready** — results page updates the URL to `?fav=RRGGBB` for GoatCounter (or any URL-based analytics).
+- **Analytics-ready** — results page updates the URL to an encoded token (`?r=...`) containing algorithm, winner, and top-10 colours for GoatCounter (or any URL-based analytics).
 - **Algorithm explainer** — `algorithms.html` documents both algorithms with Mermaid flow diagrams.
 
 ## Quick start (GitHub Pages)
