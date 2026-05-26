@@ -453,7 +453,7 @@ function _decodeResultToken(token) {
 function _simpleChecksum(input) {
   let sum = 0;
   for (let i = 0; i < input.length; i++) {
-    sum = (sum + (input.charCodeAt(i) * (i + 1))) % CHECKSUM_MODULO;
+    sum = ((sum * 31) + input.charCodeAt(i)) % CHECKSUM_MODULO;
   }
   return sum;
 }
@@ -480,7 +480,7 @@ function _base64UrlDecode(input) {
 }
 
 /* Optional helper for owner-side decoding from browser console. */
-window.decodeFavouriteColourResultToken = _decodeResultToken;
+window.decodeResultToken = _decodeResultToken;
 
 /* ══════════════════════════════════════════════
    Bootstrap
