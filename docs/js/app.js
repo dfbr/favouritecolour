@@ -34,6 +34,10 @@ const CONTRAST_THRESHOLD = 0.179;
 const EARLY_RESULTS_FRACTION = 0.4;
 /* Lightweight obfuscation key for analytics result token */
 const RESULTS_TOKEN_KEY = 'favourite-colour-results-v1';
+/* Encoded token layout: version|algorithm|winner|top10|checksum */
+const RESULT_TOKEN_PARTS = 5;
+/* Checksum modulus equals 36^3 (fits in 3 base36 chars) */
+const CHECKSUM_MODULO = 46656;
 
 /* ══════════════════════════════════════════════
    DOM references
@@ -415,10 +419,7 @@ function _encodeResultToken(ranking, method) {
   const packed = `${payload}|${checksum}`;
   const obfuscated = _xorString(packed, RESULTS_TOKEN_KEY);
 
-  return btoa(obfuscated)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return _base64UrlEncode(obfuscated);
 }
 
 /**
@@ -428,11 +429,9 @@ function _encodeResultToken(ranking, method) {
  */
 function _decodeResultToken(token) {
   try {
-    const b64 = token.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-    const packed = _xorString(atob(padded), RESULTS_TOKEN_KEY);
+    const packed = _xorString(_base64UrlDecode(token), RESULTS_TOKEN_KEY);
     const parts = packed.split('|');
-    if (parts.length !== 5 || parts[0] !== 'v1') return null;
+    if (parts.length !== RESULT_TOKEN_PARTS || parts[0] !== 'v1') return null;
 
     const payload = parts.slice(0, 4).join('|');
     const checksum = parseInt(parts[4], 36);
@@ -454,7 +453,7 @@ function _decodeResultToken(token) {
 function _simpleChecksum(input) {
   let sum = 0;
   for (let i = 0; i < input.length; i++) {
-    sum = (sum + (input.charCodeAt(i) * (i + 1))) % 46656; /* 36^3 */
+    sum = (sum + (input.charCodeAt(i) * (i + 1))) % CHECKSUM_MODULO;
   }
   return sum;
 }
@@ -465,6 +464,19 @@ function _xorString(input, key) {
     out += String.fromCharCode(input.charCodeAt(i) ^ key.charCodeAt(i % key.length));
   }
   return out;
+}
+
+function _base64UrlEncode(input) {
+  return btoa(input)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function _base64UrlDecode(input) {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  return atob(padded);
 }
 
 /* Optional helper for owner-side decoding from browser console. */
