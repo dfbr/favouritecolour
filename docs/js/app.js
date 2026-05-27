@@ -59,7 +59,7 @@ const estComparisons  = document.getElementById('est-comparisons');
 
 /* Comparing */
 const btnBack         = document.getElementById('btn-back');
-const btnDebug        = document.getElementById('btn-debug');
+const btnSettings     = document.getElementById('btn-settings');
 const btnEarlyResults = document.getElementById('btn-early-results');
 const progressText    = document.getElementById('progress-text');
 const progressBar     = document.getElementById('progress-bar');
@@ -67,8 +67,10 @@ const swatchA         = document.getElementById('swatch-a');
 const swatchB         = document.getElementById('swatch-b');
 const labelA          = document.getElementById('label-a');
 const labelB          = document.getElementById('label-b');
-const debugPanel      = document.getElementById('debug-panel');
-const debugOutput     = document.getElementById('debug-output');
+const settingsPanel   = document.getElementById('settings-panel');
+const settingPalette  = document.getElementById('setting-palette');
+const settingMethod   = document.getElementById('setting-method');
+const settingShowNames = document.getElementById('setting-show-names');
 
 /* Results */
 const winnerColour    = document.getElementById('winner-colour');
@@ -178,6 +180,7 @@ function restoreSession(saved) {
 
 function showComparingScreen() {
   showScreen('comparing');
+  _renderSettings();
   renderPair();
 }
 
@@ -201,8 +204,11 @@ function renderPair() {
   swatchB.style.backgroundColor = b.hex;
 
   /* Label text */
-  labelA.textContent = session.showNames ? (a.name || a.hex) : '';
-  labelB.textContent = session.showNames ? (b.name || b.hex) : '';
+  const showNames = !!session.showNames;
+  labelA.textContent = showNames ? (a.name || a.hex) : '';
+  labelB.textContent = showNames ? (b.name || b.hex) : '';
+  labelA.classList.toggle('swatch-label--hidden', !showNames);
+  labelB.classList.toggle('swatch-label--hidden', !showNames);
 
   /* Accessible label (for screen readers) */
   swatchA.setAttribute('aria-label', `Choose ${a.name || a.hex}`);
@@ -228,8 +234,8 @@ function renderPair() {
     btnEarlyResults.classList.remove('hidden');
   }
 
-  /* Refresh debug panel if open */
-  if (!debugPanel.classList.contains('hidden')) _updateDebug();
+  /* Refresh settings panel values if open */
+  if (!settingsPanel.classList.contains('hidden')) _renderSettings();
 }
 
 /* Handle swatch button clicks */
@@ -273,20 +279,24 @@ btnEarlyResults.addEventListener('click', () => {
   showResultsScreen();
 });
 
-btnDebug.addEventListener('click', () => {
-  debugPanel.classList.toggle('hidden');
-  if (!debugPanel.classList.contains('hidden')) _updateDebug();
+btnSettings.addEventListener('click', () => {
+  settingsPanel.classList.toggle('hidden');
+  settingsPanel.setAttribute('aria-hidden', settingsPanel.classList.contains('hidden') ? 'true' : 'false');
+  if (!settingsPanel.classList.contains('hidden')) _renderSettings();
 });
 
-function _updateDebug() {
-  const ranking = ranker.getRanking().slice(0, 8);
-  debugOutput.textContent = JSON.stringify({
-    method:      session.method,
-    comparisons: ranker.comparisons,
-    estimated:   ranker.estimatedTotal(),
-    complete:    ranker.complete,
-    top:         ranking.map(r => `#${r.rank} ${r.colour.name || r.colour.hex}`),
-  }, null, 2);
+settingShowNames.addEventListener('change', () => {
+  if (!session || !ranker) return;
+  session.showNames = settingShowNames.checked;
+  Storage.save(session, ranker);
+  renderPair();
+});
+
+function _renderSettings() {
+  if (!session) return;
+  settingPalette.textContent = _paletteLabel(session.palette);
+  settingMethod.textContent = _methodLabel(session.method);
+  settingShowNames.checked = !!session.showNames;
 }
 
 /* ══════════════════════════════════════════════
@@ -405,6 +415,20 @@ function _toast(msg) {
     el.classList.remove('toast--visible');
     setTimeout(() => el.remove(), 400);
   }, 2200);
+}
+
+function _paletteLabel(palette) {
+  switch (palette) {
+    case '8': return '8';
+    case '16': return '16';
+    case 'all': return '65 named';
+    case 'websafe': return 'Web-safe 216';
+    default: return String(palette || '');
+  }
+}
+
+function _methodLabel(method) {
+  return method === 'elo' ? 'Chess Ranking' : 'Tennis Ladder';
 }
 
 /** Encode algorithm + winner + top10 colours into an obfuscated URL-safe token. */

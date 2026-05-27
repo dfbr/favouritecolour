@@ -372,6 +372,10 @@ fieldset    { border: none; }
   /* color is set dynamically for contrast */
 }
 
+.swatch-label--hidden {
+  display: none;
+}
+
 /* Show label on hover / focus */
 .swatch:hover .swatch-label,
 .swatch:focus-visible .swatch-label { opacity: 0.8; }
@@ -379,19 +383,53 @@ fieldset    { border: none; }
 /* Always visible on touch devices */
 @media (hover: none) { .swatch-label { opacity: 0.75; } }
 
-/* ── Debug panel ── */
-.debug-panel {
+/* ── Settings panel ── */
+.settings-panel {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   background: rgba(0,0,0,0.88);
-  color: #0f0;
-  font-family: var(--font-mono);
-  font-size: 11px;
+  color: rgba(255,255,255,0.9);
+  font-size: var(--text-xs);
   padding: var(--sp-3) var(--sp-4);
-  max-height: 220px;
-  overflow-y: auto;
+  border-top: 1px solid rgba(255,255,255,0.12);
   z-index: 100;
-  white-space: pre;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0;
+}
+
+.settings-label {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+
+.settings-value {
+  letter-spacing: 0.04em;
+}
+
+.settings-toggle {
+  cursor: pointer;
+}
+
+.settings-toggle input[type="checkbox"] {
+  appearance: none;
+  width: 1em;
+  height: 1em;
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: var(--radius);
+  background: transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.settings-toggle input[type="checkbox"]:checked {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.9);
 }
 
 /* ════════════════════════════════════════════════
