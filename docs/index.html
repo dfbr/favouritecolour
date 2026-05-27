@@ -145,7 +145,7 @@
       <button id="btn-early-results" class="btn-ghost btn-ghost--light hidden" title="See partial results now">
         Results ↗
       </button>
-      <button id="btn-debug" class="btn-ghost btn-ghost--light" aria-label="Toggle debug panel" title="Debug">⚙</button>
+      <button id="btn-settings" class="btn-ghost btn-ghost--light" aria-label="Toggle settings panel" title="Settings">⚙</button>
     </div>
   </header>
 
@@ -165,9 +165,20 @@
   <!-- Keyboard shortcut hint -->
   <p class="kbd-hint">Press <kbd>A</kbd> / <kbd>←</kbd> or <kbd>B</kbd> / <kbd>→</kbd></p>
 
-  <!-- Debug panel (hidden by default) -->
-  <div id="debug-panel" class="debug-panel hidden" aria-hidden="true">
-    <pre id="debug-output"></pre>
+  <!-- Settings panel (hidden by default) -->
+  <div id="settings-panel" class="settings-panel hidden" aria-hidden="true">
+    <div class="settings-row">
+      <span class="settings-label">Palette</span>
+      <span id="setting-palette" class="settings-value"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Method</span>
+      <span id="setting-method" class="settings-value"></span>
+    </div>
+    <label class="settings-row settings-toggle" for="setting-show-names">
+      <span class="settings-label">Show colour names</span>
+      <input id="setting-show-names" type="checkbox">
+    </label>
   </div>
 
 </section><!-- /screen-comparing -->
